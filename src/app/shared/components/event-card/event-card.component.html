@@ -9,7 +9,7 @@
         </div>
     </div>
     <div class="middle">
-        <img [src]="data.imageUrl" alt="Event image" (error)="onImageError">
+        <img [src]="data.imageUrl" alt="Event image" (error)="onImageError()">
     </div>
     <div class="bottom">
         <span class="description">{{data.description}}</span>
