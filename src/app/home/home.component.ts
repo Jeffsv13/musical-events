@@ -1,34 +1,79 @@
-import { Component } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { HomeHeaderComponent } from "./home-header/home-header.component";
 import { FooterComponent } from "../shared/components/footer/footer.component";
 import { EventCardComponent } from "../shared/components/event-card/event-card.component";
 import { Concert } from '../shared/models/concert.model';
+import {MatSelectModule} from '@angular/material/select'
+import {MatFormFieldModule} from '@angular/material/form-field'
+import { Genre } from '../shared/models/genre.model';
+import { HomeService } from './home.service';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { HighlightableDirective } from '../shared/directives/highlightable.directive';
 
 @Component({
   selector: 'app-home',
-  imports: [HomeHeaderComponent, FooterComponent, EventCardComponent],
+  imports: [HomeHeaderComponent,
+      FooterComponent,
+      EventCardComponent,
+      MatSelectModule,
+      MatFormFieldModule,
+      ReactiveFormsModule,
+      HighlightableDirective
+    ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })
-export class HomeComponent {
-  onSearchValueChange(value:string){
-    console.log('new value: ',value);
+export class HomeComponent implements OnInit{
+
+  concerts: Concert[] = [];
+  genres: Genre[] = [];
+  initialConcerts: Concert[] = [];
+  homeService = inject(HomeService);
+  currentGenre = new FormControl(0);
+  searchGenreValue = 0;
+  searchBarValue = '';
+
+  ngOnInit(): void {
+    this.homeService.getData().subscribe((response) =>{
+      this.initialConcerts = response.concerts;
+      this.genres = response.genres;
+      this.concerts = this.initialConcerts;
+    });
+
+    this.currentGenre.valueChanges.subscribe(
+      (value) =>{
+        this.searchGenreValue = value || 0;
+        this.filterConcerts();
+      }
+    );
   }
 
-  temporalData: Concert = {
-    id:1,
-    title:' AC/DC Rock World tour',
-    description: 'AC/DC vuelve al escenario con este tour, no te lo pierdas.',
-    extendedDescription:'AC/DC está de regreso con su electrizante Rock the World Tour, una gira que prometeser una de las más épicas',
-    place:'Estadio San Marcos',
-    unitPrice: 175.0,
-    genreId:1,
-    genre:'Rock',
-    dateEvent:'12/15/2024',
-    timeEvent:'19:00',
-    imageUrl:'images/ACDC.jpg',
-    ticketsQuantity: 85,
-    finalized: false,
-    status: 'Activo',
-  };
+  onSearchValueChange(value:string){
+    this.searchBarValue = value;
+    this.filterConcerts();
+  }
+
+  filterConcerts(){
+    this.filterByGenre();
+    this.filterByDescription();
+  }
+
+  filterByGenre(){
+    if(this.searchGenreValue===0){
+      this.concerts = this.initialConcerts;
+    }else{
+      this.concerts = this.initialConcerts.filter(
+        (concert) => concert.genreId === this.searchGenreValue
+      );
+    }
+  }
+
+  filterByDescription(){
+    if(this.searchBarValue){
+      this.concerts = this.concerts.filter(
+        (concert) => concert.description.toLowerCase().includes(this.searchBarValue.toLowerCase())
+      );
+    }
+  }
+
 }
